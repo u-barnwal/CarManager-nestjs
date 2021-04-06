@@ -6,7 +6,7 @@ export class CarController {
   constructor(private carService: CarService) {}
 
   @Get()
-  async getCar() {
+  async getCars() {
     return this.carService.getCars();
   }
 }
