@@ -1,56 +1,49 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { Car } from './car.dto';
-import { CARS } from './cars.mock';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Car, CarDocument } from './schemas/car.schema';
 
 @Injectable()
 export class CarService {
-  private cars = CARS;
+  constructor(@InjectModel(Car.name) private carModel: Model<CarDocument>) {}
 
-  public getCars() {
-    return this.cars;
+  public async getCars(): Promise<Car[]> {
+    const cars = await this.carModel.find().exec();
+
+    if (!cars || !cars[0]) throw new HttpException('Not Found', 404);
+
+    return cars;
   }
 
-  public postCar(car: Car) {
-    return this.cars.push(car);
+  public async postCar(car: Car) {
+    const newCar = await new this.carModel(car);
+
+    return newCar.save();
   }
 
-  public getCar(id: number): Promise<any> {
-    const carId = Number(id);
+  public async getCar(id: number): Promise<Car> {
+    const car = await this.carModel.findOne({ id }).exec();
 
-    return new Promise((resolve) => {
-      const car = this.cars.find((car) => car.id === carId);
+    if (!car) throw new HttpException('Not Found', 404);
 
-      if (!car) throw new HttpException('Car Not Found', 404);
-
-      return resolve(car);
-    });
+    return car;
   }
 
-  public deleteCar(id: number): Promise<any> {
-    const carId = Number(id);
+  public async deleteCar(id: number): Promise<any> {
+    const car = await this.carModel.deleteOne({ id }).exec();
 
-    return new Promise((resolve) => {
-      const index = this.cars.findIndex((car) => car.id === carId);
+    if (car.deletedCount === 0) throw new HttpException('Not Found', 404);
 
-      if (index === -1) throw new HttpException('Car Not Found', 404);
-
-      this.cars.splice(index, 1);
-
-      return resolve(this.cars);
-    });
+    return car;
   }
 
-  public putCar(id: number, key: string, value: string): Promise<any> {
-    const carId = Number(id);
+  public async putCar(id: number, key: string, value: string): Promise<Car> {
+    const car = await this.carModel
+      .findOneAndUpdate({ id }, { [key]: value })
+      .exec();
 
-    return new Promise((resolve) => {
-      const index = this.cars.findIndex((car) => car.id === carId);
+    if (!car) throw new HttpException('Not Found', 404);
 
-      if (index === -1) throw new HttpException('Car Not Found', 404);
-
-      this.cars[index][key] = value;
-
-      return resolve(this.cars[index]);
-    });
+    return car;
   }
 }
