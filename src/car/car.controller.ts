@@ -5,7 +5,7 @@ import { CarService } from './car.service';
 export class CarController {
   constructor(private carService: CarService) {}
 
-  @Get('')
+  @Get()
   async getCar() {
     return this.carService.getCars();
   }
